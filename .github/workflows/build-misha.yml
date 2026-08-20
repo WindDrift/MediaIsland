@@ -1,16 +1,17 @@
-name: Build
+name: Build for Misha
 
 on:
   push:
-    # dev/ci-misha（SDK 2.1.1.1 / net10）由 build-misha.yml 构建
-    branches-ignore:
+    branches:
       - dev/ci-misha
     paths:
       - 'MediaIsland/**'
+      - 'MediaIsland.Tests/**'
+      - 'MediaIsland.Windows/**'
       - 'native/ttml-ffi/**'
       - 'native/audio-ffi/**'
-      - '.github/workflows/build.yml'
-  workflow_dispatch: 
+      - '.github/workflows/build-misha.yml'
+  workflow_dispatch:
 
 jobs:
   build_app:
@@ -24,7 +25,7 @@ jobs:
       - name: Install .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.x
+          dotnet-version: 10.x
 
       - name: Install Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -40,11 +41,14 @@ jobs:
 
       - name: Cache NuGet Packages
         uses: actions/cache@v4
-        with: 
+        with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**.*.csproj') }}
+          key: ${{ runner.os }}-nuget-misha-${{ hashFiles('**.*.csproj') }}
           restore-keys: |
-            ${{ runner.os }}-nuget-
+            ${{ runner.os }}-nuget-misha-
+
+      - name: Test
+        run: dotnet test
 
       - name: Build
         run: pwsh -ep bypass ./Tools/Publish.ps1
@@ -54,7 +58,7 @@ jobs:
         with:
           path: |
             ./MediaIsland/cipx/*.cipx
-      
+
       - name: Upload APP to release
         uses: ncipollo/release-action@v1
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
