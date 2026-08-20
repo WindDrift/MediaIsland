@@ -48,7 +48,8 @@ jobs:
             ${{ runner.os }}-nuget-misha-
 
       - name: Test
-        run: dotnet test
+        # --blame-hang：测试挂起 5 分钟后自动终止并指出挂起的测试，避免 job 无限挂死
+        run: dotnet test --blame-hang --blame-hang-timeout 5m
 
       - name: Build
         run: pwsh -ep bypass ./Tools/Publish.ps1

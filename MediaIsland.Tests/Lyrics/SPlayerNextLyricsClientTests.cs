@@ -246,13 +246,24 @@ public class SPlayerNextLyricsClientTests
         });
 
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-        using var nowPlayingResponse = await http.GetAsync("http://127.0.0.1:14558/api/now-playing");
-        if (!nowPlayingResponse.IsSuccessStatusCode)
+        HttpResponseMessage nowPlayingResponse;
+        try
+        {
+            nowPlayingResponse = await http.GetAsync("http://127.0.0.1:14558/api/now-playing");
+        }
+        catch (HttpRequestException)
+        {
+            // SPlayer Next 未在本机运行（CI 必然如此）时连接被拒，视同跳过，与下方各 return 语义一致。
+            return;
+        }
+
+        using var response = nowPlayingResponse;
+        if (!response.IsSuccessStatusCode)
         {
             return;
         }
 
-        await using var stream = await nowPlayingResponse.Content.ReadAsStreamAsync();
+        await using var stream = await response.Content.ReadAsStreamAsync();
         using var document = await System.Text.Json.JsonDocument.ParseAsync(stream);
         if (!document.RootElement.TryGetProperty("track", out var track) ||
             track.ValueKind != System.Text.Json.JsonValueKind.Object)
